@@ -1,3 +1,5 @@
+const API_BASE_URL = "https://samacourant.onrender.com"; // <-- ton backend
+
 const form = document.getElementById("registerForm");
 
 form.addEventListener("submit", async (e) => {
@@ -15,7 +17,7 @@ form.addEventListener("submit", async (e) => {
   }
 
   try {
-    const response = await fetch("http://localhost:4000/api/register", {
+    const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -29,15 +31,15 @@ form.addEventListener("submit", async (e) => {
     const data = await response.json();
 
     if (!response.ok) {
-      alert("Erreur : " + data.error);
+      alert("Erreur : " + (data.error || "inscription impossible"));
       return;
     }
 
     alert("✔️ " + data.message);
-    window.location.href = "login.html";
-
+    // après inscription, on renvoie vers la page de connexion
+    window.location.href = "/login";
   } catch (error) {
     console.error("Erreur:", error);
-    alert("Erreur réseau. Assure-toi que le serveur Node.js fonctionne.");
+    alert("Erreur réseau. Vérifie que le serveur Node.js sur Render fonctionne.");
   }
 });

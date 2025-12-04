@@ -5,7 +5,10 @@
   <title>Connexion | SAMA COURANT - SAMA TICKET</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css">
+  <!-- script.js si tu l'utilises pour l'animation de la home -->
   <script src="script.js" defer></script>
+  <!-- nouveau JS spécifique à la connexion -->
+  <script src="login.js" defer></script>
 </head>
 
 <body>
@@ -38,7 +41,8 @@
           et retrouver toutes tes données (points, énergie, présence, activités).
         </p>
 
-        <form class="auth-form" action="/login" method="post">
+        <!-- on ajoute un id et on laisse JS gérer le submit -->
+        <form id="loginForm" class="auth-form">
           <div class="form-group">
             <label for="email">Adresse e-mail</label>
             <input
@@ -73,6 +77,9 @@
           <button type="submit" class="btn btn-primary auth-submit">
             Se connecter
           </button>
+
+          <!-- zone pour afficher les erreurs -->
+          <p id="loginError" class="auth-note" style="color:#f97373;margin-top:0.5rem;display:none;"></p>
         </form>
 
         <p class="auth-footer-text">

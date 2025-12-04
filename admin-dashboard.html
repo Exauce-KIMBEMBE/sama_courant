@@ -5,7 +5,12 @@
   <title>Admin - Tableau de bord | SAMA COURANT</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Facultatif : seulement si tu utilises script.js pour autre chose -->
   <script src="script.js" defer></script>
+
+  <!-- IMPORTANT : JS qui charge les demandes depuis le backend -->
+  <script src="admin-dashboard.js" defer></script>
 </head>
 
 <body>
@@ -16,7 +21,7 @@
     </div>
 
     <nav>
-      <a href="index.html">Retour au site</a>
+      <a href="/index.html">Retour au site</a>
     </nav>
 
     <div class="nav-right">
@@ -38,11 +43,11 @@
       <section class="admin-section">
         <h2 class="admin-section-title">Demandes d’inscription</h2>
         <p class="admin-section-text">
-          Liste de test en front-end : tu peux valider / refuser pour voir le fonctionnement.
+          Les comptes en attente de validation apparaissent ici. Tu peux les valider ou les refuser.
         </p>
 
         <div id="admin-users" class="admin-users-list">
-          <!-- Le JS va injecter des cartes ici -->
+          <!-- admin-dashboard.js va injecter des cartes ici -->
         </div>
       </section>
     </section>

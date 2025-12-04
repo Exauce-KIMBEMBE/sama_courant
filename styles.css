@@ -1,0 +1,373 @@
+/* ---------- RESET & GLOBAL ---------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #020617;
+  color: #f9fafb;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ---------- HEADER ---------- */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(2, 6, 23, 0.95);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.logo-main {
+  font-size: 1rem;
+}
+
+.logo-main span {
+  color: #22c55e;
+}
+
+.logo-sub {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+nav {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.95rem;
+  color: #cbd5f5;
+}
+
+nav a {
+  opacity: 0.9;
+}
+
+nav a:hover {
+  opacity: 1;
+}
+
+.nav-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* ---------- BUTTONS ---------- */
+.btn {
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-outline {
+  border-color: #64748b;
+  background: transparent;
+  color: #e5e7eb;
+}
+
+.btn-outline:hover {
+  border-color: #22c55e;
+  color: #bbf7d0;
+}
+
+.btn-primary {
+  background: linear-gradient(to right, #22c55e, #16a34a);
+  color: #022c22;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+/* ---------- MAIN LAYOUT ---------- */
+main {
+  padding: 2rem 1rem 4rem;
+  max-width: 1100px;
+  margin: auto;
+}
+
+/* ---------- HERO SECTION ---------- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 2.5rem;
+  align-items: center;
+  padding: 2.5rem 0 3rem;
+}
+
+.tag {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+  letter-spacing: 0.14em;
+  margin-bottom: 0.5rem;
+}
+
+.hero-text h1 {
+  font-size: clamp(2.2rem, 4vw, 3.1rem);
+  margin: 0 0 0.8rem;
+}
+
+.hero-text h1 span {
+  color: #22c55e;
+}
+
+.hero-intro {
+  margin: 0 0 1.5rem;
+  max-width: 32rem;
+  line-height: 1.6;
+}
+
+.hero-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hero-badges {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.3rem 0.7rem;
+  background: rgba(34, 197, 94, 0.1);
+  color: #bbf7d0;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  font-size: 0.8rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.hero-note {
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* ---------- HERO CARD ---------- */
+.hero-card {
+  background: radial-gradient(circle at top left, #22c55e22, #020617);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 1.5rem;
+  border-radius: 1.4rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+}
+
+.hero-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.hero-card h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.hero-card-label {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid #22c55e;
+  color: #bbf7d0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.metric {
+  padding: 0.75rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(51, 65, 85, 0.85);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.8);
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.metric-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.metric-note {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-left: 0.15rem;
+}
+
+.hero-example-note {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* ---------- SECTIONS ---------- */
+.section {
+  margin-top: 3rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  font-size: 0.95rem;
+  color: #9ca3af;
+  margin-bottom: 1.5rem;
+  max-width: 40rem;
+}
+
+/* ---------- STEPS ---------- */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.step {
+  padding: 1rem;
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.96);
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbf7d0;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.step-title {
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.step-text {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* ---------- FEATURES ---------- */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.feature-card {
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.96);
+  border-radius: 1rem;
+  border: 1px solid rgba(51, 65, 85, 0.8);
+}
+
+.feature-title {
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.feature-text {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* ---------- CTA ---------- */
+.cta-final {
+  text-align: center;
+  padding: 2rem;
+  margin-top: 3rem;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: radial-gradient(circle at top, #22c55e22, #020617);
+}
+
+.cta-final p {
+  margin-bottom: 1rem;
+}
+
+/* ---------- FOOTER ---------- */
+footer {
+  text-align: center;
+  padding: 1rem;
+  margin-top: 3rem;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 900px) {
+  header {
+    padding: 0.8rem 1rem;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  nav {
+    display: none;
+  }
+
+  main {
+    padding-inline: 1rem;
+  }
+}

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Connexion | SAMA COURANT - SAMA TICKET</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <!-- HEADER (même que sur l'accueil) -->
+  <header>
+    <div class="logo">
+      <div class="logo-main">SAMA <span>COURANT</span></div>
+      <div class="logo-sub">SAMA TICKET</div>
+    </div>
+
+    <nav>
+      <a href="/index.html#features">Fonctionnalités</a>
+      <a href="/index.html#how">Comment ça marche</a>
+    </nav>
+
+    <div class="nav-right">
+      <a href="/login" class="btn btn-outline active-link">Se connecter</a>
+      <a href="/register" class="btn btn-primary">S’inscrire</a>
+    </div>
+  </header>
+
+  <!-- CONTENU PRINCIPAL -->
+  <main>
+    <section class="auth-wrapper">
+      <div class="auth-card">
+        <p class="tag">Espace membre</p>
+        <h1 class="auth-title">Se connecter</h1>
+        <p class="auth-subtitle">
+          Connecte-toi pour accéder à ton tableau de bord SAMA COURANT - SAMA TICKET
+          et retrouver toutes tes données (points, énergie, présence, activités).
+        </p>
+
+        <form class="auth-form" action="/login" method="post">
+          <div class="form-group">
+            <label for="email">Adresse e-mail</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              placeholder="exemple@domaine.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div class="form-extra">
+            <label class="checkbox">
+              <input type="checkbox" name="remember">
+              <span>Se souvenir de moi</span>
+            </label>
+
+            <a href="#" class="link-muted">Mot de passe oublié ?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary auth-submit">
+            Se connecter
+          </button>
+        </form>
+
+        <p class="auth-footer-text">
+          Nouveau sur la plateforme ?
+          <a href="/register" class="link-main">Créer un compte</a>
+        </p>
+
+        <p class="auth-note">
+          🔐 Pour utiliser <strong>n’importe quelle fonctionnalité</strong> de SAMA COURANT - SAMA TICKET,
+          l’utilisateur doit être connecté.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © 2025 SAMA COURANT - SAMA TICKET — Tous droits réservés.
+  </footer>
+</body>
+</html>

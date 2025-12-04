@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Tableau de bord | SAMA COURANT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-main">SAMA <span>COURANT</span></div>
+      <div class="logo-sub">Admin panel</div>
+    </div>
+
+    <nav>
+      <a href="index.html">Retour au site</a>
+    </nav>
+
+    <div class="nav-right">
+      <span class="admin-badge">Admin connecté</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="admin-wrapper">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">Tableau de bord admin</h1>
+          <p class="admin-subtitle">
+            Gère les demandes d’inscription des utilisateurs de SAMA COURANT - SAMA TICKET.
+          </p>
+        </div>
+      </div>
+
+      <section class="admin-section">
+        <h2 class="admin-section-title">Demandes d’inscription</h2>
+        <p class="admin-section-text">
+          Liste de test en front-end : tu peux valider / refuser pour voir le fonctionnement.
+        </p>
+
+        <div id="admin-users" class="admin-users-list">
+          <!-- Le JS va injecter des cartes ici -->
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    © 2025 SAMA COURANT - SAMA TICKET — Panneau d’administration.
+  </footer>
+</body>
+</html>

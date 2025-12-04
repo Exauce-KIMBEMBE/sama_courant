@@ -52,3 +52,93 @@ document.addEventListener("DOMContentLoaded", () => {
 
   observer.observe(heroCard);
 });
+
+
+// --- SIMULATION ADMIN : gestion des demandes (front uniquement) ---
+document.addEventListener("DOMContentLoaded", () => {
+  const adminUsersContainer = document.querySelector("#admin-users");
+  if (!adminUsersContainer) return; // on est pas sur la page admin
+
+  // Données de test (front seulement)
+  const demoUsers = [
+    {
+      id: 1,
+      firstname: "Moussa",
+      lastname: "Diop",
+      email: "moussa@example.com",
+      status: "pending",
+      createdAt: "2025-12-01"
+    },
+    {
+      id: 2,
+      firstname: "Awa",
+      lastname: "Ndiaye",
+      email: "awa@example.com",
+      status: "pending",
+      createdAt: "2025-12-02"
+    },
+    {
+      id: 3,
+      firstname: "Fatou",
+      lastname: "Sarr",
+      email: "fatou@example.com",
+      status: "approved",
+      createdAt: "2025-12-03"
+    }
+  ];
+
+  function renderUsers() {
+    adminUsersContainer.innerHTML = "";
+    demoUsers.forEach(user => {
+      const card = document.createElement("div");
+      card.className = "admin-user-card";
+
+      card.innerHTML = `
+        <div class="admin-user-name">${user.firstname} ${user.lastname}</div>
+        <div class="admin-user-email">${user.email}</div>
+        <div class="admin-user-meta">
+          Inscription le ${user.createdAt}
+        </div>
+        <div class="status-badge ${statusClass(user.status)}">
+          ${statusLabel(user.status)}
+        </div>
+        <div class="admin-user-actions">
+          <button class="btn btn-xs btn-ghost" data-action="approve">Valider</button>
+          <button class="btn btn-xs btn-ghost" data-action="reject">Refuser</button>
+        </div>
+      `;
+
+      const btnApprove = card.querySelector('[data-action="approve"]');
+      const btnReject = card.querySelector('[data-action="reject"]');
+      const statusEl = card.querySelector(".status-badge");
+
+      btnApprove.addEventListener("click", () => {
+        user.status = "approved";
+        statusEl.className = "status-badge " + statusClass(user.status);
+        statusEl.textContent = statusLabel(user.status);
+      });
+
+      btnReject.addEventListener("click", () => {
+        user.status = "rejected";
+        statusEl.className = "status-badge " + statusClass(user.status);
+        statusEl.textContent = statusLabel(user.status);
+      });
+
+      adminUsersContainer.appendChild(card);
+    });
+  }
+
+  function statusClass(status) {
+    if (status === "approved") return "status-approved";
+    if (status === "rejected") return "status-rejected";
+    return "status-pending";
+  }
+
+  function statusLabel(status) {
+    if (status === "approved") return "Validé";
+    if (status === "rejected") return "Refusé";
+    return "En attente";
+  }
+
+  renderUsers();
+});

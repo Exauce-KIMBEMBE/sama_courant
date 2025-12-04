@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Connexion | SAMA COURANT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-main">SAMA <span>COURANT</span></div>
+      <div class="logo-sub">SAMA TICKET</div>
+    </div>
+
+    <nav>
+      <a href="index.html#features">Fonctionnalités</a>
+      <a href="index.html#how">Comment ça marche</a>
+    </nav>
+
+    <div class="nav-right">
+      <a href="login.html" class="btn btn-outline">Espace membre</a>
+      <a href="admin-login.html" class="btn btn-primary active-link">Admin</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="auth-wrapper">
+      <div class="auth-card">
+        <p class="tag">Administration</p>
+        <h1 class="auth-title">Connexion admin</h1>
+        <p class="auth-subtitle">
+          Connecte-toi en tant qu’administrateur pour gérer les demandes
+          d’inscription et les comptes utilisateurs.
+        </p>
+
+        <!-- Pour le moment, uniquement visuel -->
+        <form class="auth-form" action="admin-dashboard.html" method="get">
+          <div class="form-group">
+            <label for="admin_email">Identifiant / e-mail</label>
+            <input
+              type="text"
+              id="admin_email"
+              name="admin_email"
+              required
+              placeholder="admin@samacourant.test"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="admin_password">Mot de passe</label>
+            <input
+              type="password"
+              id="admin_password"
+              name="admin_password"
+              required
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary auth-submit">
+            Se connecter en admin
+          </button>
+        </form>
+
+        <p class="auth-note">
+          💡 Pour ce test, cette page ne vérifie pas encore les identifiants :
+          elle te redirige simplement vers le panneau admin.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © 2025 SAMA COURANT - SAMA TICKET — Admin.
+  </footer>
+</body>
+</html>

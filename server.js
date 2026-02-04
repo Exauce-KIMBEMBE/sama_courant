@@ -32,14 +32,12 @@ function createToken(user) {
   );
 }
 
-// --- Middleware: auth obligatoire ---
+// --- Middleware: auth obligatoire (JWT utilisateur) ---
 function authRequired(req, res, next) {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-  if (!token) {
-    return res.status(401).json({ error: "Token manquant" });
-  }
+  if (!token) return res.status(401).json({ error: "Token manquant" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -58,10 +56,45 @@ function adminRequired(req, res, next) {
   next();
 }
 
+// --- Middleware: auth device (ESP32) via X-DEVICE-KEY ---
+function deviceAuth(req, res, next) {
+  const key = req.headers["x-device-key"];
+  if (!key) return res.status(401).json({ error: "DEVICE_KEY manquante" });
+
+  // Version TEST (simple). Plus tard: table machines + clé en DB.
+  if (!String(key).startsWith("SAMA-")) {
+    return res.status(403).json({ error: "DEVICE_KEY invalide" });
+  }
+  next();
+}
+
 // --- Route de test ---
 app.get("/", (req, res) => {
   res.json({ message: "API SAMA COURANT - SAMA TICKET fonctionne ✅" });
 });
+
+// ---------------------------------------------------------------------------
+// Init DB minimal (crée la table sessions si elle n'existe pas)
+// ---------------------------------------------------------------------------
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id SERIAL PRIMARY KEY,
+      session_id TEXT UNIQUE NOT NULL,
+      user_id INT NOT NULL,
+      machine_code TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('active','ended')),
+      started_at TIMESTAMP DEFAULT NOW(),
+      ended_at TIMESTAMP,
+      stop_reason TEXT,
+      energy_wh REAL DEFAULT 0,
+      last_power_w REAL DEFAULT 0,
+      last_vrms REAL DEFAULT 0,
+      last_arms REAL DEFAULT 0,
+      last_seen_at TIMESTAMP
+    );
+  `);
+}
 
 // ---------------------------------------------------------------------------
 // 1) INSCRIPTION: demande en attente (status = 'pending')
@@ -205,8 +238,166 @@ app.patch("/api/admin/users/:id/status", authRequired, adminRequired, async (req
 });
 
 // ---------------------------------------------------------------------------
-// Lancer le serveur
+// 5) WEB: liste des machines (statut libre/occupée)
 // ---------------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`Serveur SAMA COURANT lancé sur le port ${PORT}`);
+app.get("/api/machines", authRequired, async (req, res) => {
+  try {
+    // Liste simple pour TEST (tu peux en ajouter)
+    const machines = ["MACHINE-1", "MACHINE-2", "MACHINE-3"];
+
+    const result = await pool.query(
+      "SELECT machine_code FROM sessions WHERE status='active'"
+    );
+
+    const busySet = new Set(result.rows.map(r => r.machine_code));
+
+    res.json(
+      machines.map(code => ({
+        machineCode: code,
+        status: busySet.has(code) ? "busy" : "free"
+      }))
+    );
+  } catch (err) {
+    console.error("Erreur /api/machines:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
+
+// ---------------------------------------------------------------------------
+// 6) WEB: démarrer une session (bloque si machine occupée)
+// ---------------------------------------------------------------------------
+app.post("/api/sessions/start", authRequired, async (req, res) => {
+  const { machineCode } = req.body;
+  if (!machineCode) return res.status(400).json({ error: "machineCode requis" });
+
+  try {
+    const busy = await pool.query(
+      "SELECT id FROM sessions WHERE machine_code=$1 AND status='active' LIMIT 1",
+      [machineCode]
+    );
+
+    if (busy.rows.length > 0) {
+      return res.status(409).json({ error: "MACHINE_BUSY", message: "Machine déjà utilisée" });
+    }
+
+    const sessionId = `S_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
+    const created = await pool.query(
+      `INSERT INTO sessions (session_id, user_id, machine_code, status, started_at)
+       VALUES ($1, $2, $3, 'active', NOW())
+       RETURNING session_id, machine_code`,
+      [sessionId, req.user.id, machineCode]
+    );
+
+    res.status(201).json({
+      sessionId: created.rows[0].session_id,
+      machineCode: created.rows[0].machine_code
+    });
+  } catch (err) {
+    console.error("Erreur /api/sessions/start:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 7) ESP32: vérifier s'il y a une session active pour une machine
+//    GET /api/sessions/active?machineCode=MACHINE-1
+// ---------------------------------------------------------------------------
+app.get("/api/sessions/active", deviceAuth, async (req, res) => {
+  const { machineCode } = req.query;
+  if (!machineCode) return res.status(400).json({ error: "machineCode requis" });
+
+  try {
+    const result = await pool.query(
+      `SELECT session_id, user_id FROM sessions
+       WHERE machine_code=$1 AND status='active'
+       ORDER BY started_at DESC
+       LIMIT 1`,
+      [machineCode]
+    );
+
+    if (result.rows.length === 0) return res.json({ active: false });
+
+    res.json({
+      active: true,
+      sessionId: result.rows[0].session_id,
+      userId: result.rows[0].user_id
+    });
+  } catch (err) {
+    console.error("Erreur /api/sessions/active:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 8) ESP32: envoyer la télémetrie (mise à jour énergie session)
+// ---------------------------------------------------------------------------
+app.post("/api/device/telemetry", deviceAuth, async (req, res) => {
+  const { sessionId, machineCode, energyWh, powerW, voltageVrms, currentArms } = req.body;
+
+  if (!sessionId || !machineCode) {
+    return res.status(400).json({ error: "sessionId et machineCode requis" });
+  }
+
+  try {
+    await pool.query(
+      `UPDATE sessions
+       SET energy_wh = $1,
+           last_power_w = $2,
+           last_vrms = $3,
+           last_arms = $4,
+           last_seen_at = NOW()
+       WHERE session_id = $5 AND status='active'`,
+      [energyWh ?? 0, powerW ?? 0, voltageVrms ?? 0, currentArms ?? 0, sessionId]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Erreur /api/device/telemetry:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 9) ESP32: arrêter une session (inactivité)
+// ---------------------------------------------------------------------------
+app.post("/api/sessions/stop", deviceAuth, async (req, res) => {
+  const { sessionId, reason, energyWh } = req.body;
+  if (!sessionId) return res.status(400).json({ error: "sessionId requis" });
+
+  try {
+    const result = await pool.query(
+      `UPDATE sessions
+       SET status='ended',
+           ended_at=NOW(),
+           stop_reason=$1,
+           energy_wh=COALESCE($2, energy_wh)
+       WHERE session_id=$3 AND status='active'
+       RETURNING session_id, machine_code`,
+      [reason || "unknown", energyWh, sessionId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Session introuvable ou déjà terminée" });
+    }
+
+    res.json({ ok: true, sessionId: result.rows[0].session_id });
+  } catch (err) {
+    console.error("Erreur /api/sessions/stop:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Lancer le serveur (avec init DB)
+// ---------------------------------------------------------------------------
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Serveur SAMA COURANT lancé sur le port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Erreur init DB:", err);
+    process.exit(1);
+  });

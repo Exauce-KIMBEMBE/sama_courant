@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Machines | SAMA COURANT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+  <script src="machines.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-main">SAMA <span>COURANT</span></div>
+      <div class="logo-sub">SAMA TICKET</div>
+    </div>
+
+    <div class="nav-right">
+      <a href="index.html" class="btn btn-outline">Accueil</a>
+      <button id="logoutBtn" class="btn btn-primary">Déconnexion</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2 class="section-title">Choisir une machine</h2>
+      <p class="section-subtitle">Une seule personne par machine.</p>
+      <div id="machinesList" class="features"></div>
+      <div style="margin-top:16px">
+        <button id="refreshBtn" class="btn btn-outline">Rafraîchir</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2025 SAMA COURANT</footer>
+</body>
+</html>

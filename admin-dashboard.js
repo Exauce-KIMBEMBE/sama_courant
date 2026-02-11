@@ -1,6 +1,15 @@
 // admin-dashboard.js
 const API_BASE_URL = "https://samacourant.onrender.com";
 
+const logoutBtn = document.getElementById("logoutBtn");
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("sama_token");
+    localStorage.removeItem("sama_user");
+    window.location.href = "/login.html";
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("admin-users");
 
@@ -149,3 +158,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+

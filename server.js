@@ -1,8 +1,8 @@
-// server.js
+// server.js (MySQL Hostinger)
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { Pool } = require("pg");
+const mysql = require("mysql2/promise");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -12,10 +12,16 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// --- PostgreSQL ---
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+// --- MySQL pool ---
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT || 3306),
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
 // --- JWT ---
@@ -52,6 +58,32 @@ app.get("/", (req, res) => {
   res.json({ message: "API SAMA COURANT - SAMA TICKET fonctionne ✅" });
 });
 
+// --- Health DB ---
+app.get("/api/health", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT 1 AS ok");
+    res.json({ ok: true, db: rows[0] });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// --- Ensure table (MySQL syntax) ---
+async function ensureUsersTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      firstname VARCHAR(100) NOT NULL,
+      lastname VARCHAR(100) NOT NULL,
+      email VARCHAR(191) NOT NULL UNIQUE,
+      password_hash VARCHAR(255) NOT NULL,
+      role ENUM('user','admin') NOT NULL DEFAULT 'user',
+      status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 // ---------------------------------------------------------------------------
 // 🔐 SETUP ADMIN (temporaire)
 // POST /api/setup-admin
@@ -60,6 +92,7 @@ app.get("/", (req, res) => {
 // ---------------------------------------------------------------------------
 app.post("/api/setup-admin", async (req, res) => {
   const setupKey = req.headers["x-setup-key"];
+
   if (!process.env.SETUP_KEY) {
     return res.status(500).json({ error: "SETUP_KEY manquant côté serveur" });
   }
@@ -73,40 +106,33 @@ app.post("/api/setup-admin", async (req, res) => {
   }
 
   try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        firstname TEXT NOT NULL,
-        lastname TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'user',
-        status TEXT NOT NULL DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
+    await ensureUsersTable();
 
-    const existing = await pool.query("SELECT id FROM users WHERE email=$1", [email]);
-    if (existing.rows.length > 0) {
+    const [existing] = await pool.query("SELECT id FROM users WHERE email=?", [email]);
+    if (existing.length > 0) {
       return res.status(400).json({ error: "Cet e-mail est déjà utilisé" });
     }
 
     const hash = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
+    const [result] = await pool.query(
       `INSERT INTO users (firstname, lastname, email, password_hash, role, status)
-       VALUES ($1,$2,$3,$4,'admin','approved')
-       RETURNING id, firstname, lastname, email, role, status, created_at`,
+       VALUES (?, ?, ?, ?, 'admin', 'approved')`,
       [firstname, lastname, email, hash]
+    );
+
+    const [rows] = await pool.query(
+      "SELECT id, firstname, lastname, email, role, status, created_at FROM users WHERE id=?",
+      [result.insertId]
     );
 
     res.status(201).json({
       message: "Admin créé et approuvé ✅ (supprime ensuite cette route)",
-      admin: result.rows[0],
+      admin: rows[0],
     });
   } catch (err) {
     console.error("Erreur /api/setup-admin :", err);
-    res.status(500).json({ error: "Erreur serveur" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
 });
 
@@ -120,27 +146,33 @@ app.post("/api/register", async (req, res) => {
   }
 
   try {
-    const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
-    if (existing.rows.length > 0) {
+    await ensureUsersTable();
+
+    const [existing] = await pool.query("SELECT id FROM users WHERE email=?", [email]);
+    if (existing.length > 0) {
       return res.status(400).json({ error: "Cet e-mail est déjà utilisé" });
     }
 
     const hash = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
+    const [result] = await pool.query(
       `INSERT INTO users (firstname, lastname, email, password_hash, role, status)
-       VALUES ($1, $2, $3, $4, 'user', 'pending')
-       RETURNING id, firstname, lastname, email, role, status, created_at`,
+       VALUES (?, ?, ?, ?, 'user', 'pending')`,
       [firstname, lastname, email, hash]
+    );
+
+    const [rows] = await pool.query(
+      "SELECT id, firstname, lastname, email, role, status, created_at FROM users WHERE id=?",
+      [result.insertId]
     );
 
     res.status(201).json({
       message: "Demande d'inscription envoyée. En attente de validation par l'admin.",
-      user: result.rows[0],
+      user: rows[0],
     });
   } catch (err) {
     console.error("Erreur /api/register :", err);
-    res.status(500).json({ error: "Erreur serveur" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
 });
 
@@ -154,12 +186,14 @@ app.post("/api/login", async (req, res) => {
   }
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (result.rows.length === 0) {
+    await ensureUsersTable();
+
+    const [rows] = await pool.query("SELECT * FROM users WHERE email=?", [email]);
+    if (rows.length === 0) {
       return res.status(400).json({ error: "Identifiants invalides" });
     }
 
-    const user = result.rows[0];
+    const user = rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: "Identifiants invalides" });
 
@@ -185,7 +219,7 @@ app.post("/api/login", async (req, res) => {
     });
   } catch (err) {
     console.error("Erreur /api/login :", err);
-    res.status(500).json({ error: "Erreur serveur" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
 });
 
@@ -194,19 +228,24 @@ app.post("/api/login", async (req, res) => {
 // ---------------------------------------------------------------------------
 app.get("/api/admin/users", authRequired, adminRequired, async (req, res) => {
   const { status } = req.query;
+
   try {
-    let query = "SELECT id, firstname, lastname, email, role, status, created_at FROM users";
+    await ensureUsersTable();
+
+    let sql = "SELECT id, firstname, lastname, email, role, status, created_at FROM users";
     const params = [];
+
     if (status) {
-      query += " WHERE status = $1";
+      sql += " WHERE status = ?";
       params.push(status);
     }
-    query += " ORDER BY created_at DESC";
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    sql += " ORDER BY created_at DESC";
+
+    const [rows] = await pool.query(sql, params);
+    res.json(rows);
   } catch (err) {
     console.error("Erreur /api/admin/users :", err);
-    res.status(500).json({ error: "Erreur serveur" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
 });
 
@@ -222,19 +261,26 @@ app.patch("/api/admin/users/:id/status", authRequired, adminRequired, async (req
   }
 
   try {
-    const result = await pool.query(
-      "UPDATE users SET status = $1 WHERE id = $2 RETURNING id, firstname, lastname, email, role, status",
+    await ensureUsersTable();
+
+    const [result] = await pool.query(
+      "UPDATE users SET status=? WHERE id=?",
       [status, userId]
     );
 
-    if (result.rows.length === 0) {
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Utilisateur introuvable" });
     }
 
-    res.json({ message: "Statut mis à jour", user: result.rows[0] });
+    const [rows] = await pool.query(
+      "SELECT id, firstname, lastname, email, role, status FROM users WHERE id=?",
+      [userId]
+    );
+
+    res.json({ message: "Statut mis à jour", user: rows[0] });
   } catch (err) {
     console.error("Erreur /api/admin/users/:id/status :", err);
-    res.status(500).json({ error: "Erreur serveur" });
+    res.status(500).json({ error: "Erreur serveur", details: err.message });
   }
 });
 

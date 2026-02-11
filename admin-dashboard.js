@@ -4,24 +4,33 @@ const API_BASE_URL = "https://samacourant.onrender.com";
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("admin-users");
 
-  // Vérifier que l'admin est connecté
-  const token = localStorage.getItem("sama_admin_token");
-  const adminUserRaw = localStorage.getItem("sama_admin_user");
+  // ✅ On récupère les mêmes clés que login.js
+  const token = localStorage.getItem("sama_token");
+  const userRaw = localStorage.getItem("sama_user");
 
-  if (!token || !adminUserRaw) {
+  if (!token || !userRaw) {
     alert("Tu dois te connecter en tant qu'admin.");
-    window.location.href = "/admin-login";
+    window.location.href = "/login.html";
     return;
   }
 
-  const adminUser = JSON.parse(adminUserRaw || "{}");
-  if (adminUser.role !== "admin") {
+  let user = {};
+  try {
+    user = JSON.parse(userRaw);
+  } catch (_) {
+    user = {};
+  }
+
+  if (user.role !== "admin") {
     alert("Accès refusé : ce compte n'est pas admin.");
-    window.location.href = "/login";
+    window.location.href = "/machines.html";
     return;
   }
 
-  if (!container) return;
+  if (!container) {
+    console.error("❌ Element #admin-users introuvable dans admin-dashboard.html");
+    return;
+  }
 
   // Charger les utilisateurs en attente
   loadUsers("pending");
@@ -34,16 +43,21 @@ document.addEventListener("DOMContentLoaded", () => {
         `${API_BASE_URL}/api/admin/users?status=${encodeURIComponent(status)}`,
         {
           headers: {
-            "Authorization": `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      const users = await response.json();
+      let users = [];
+      try {
+        users = await response.json();
+      } catch (_) {
+        users = [];
+      }
 
       if (!response.ok) {
         container.innerHTML = `<p style="color:#f97373;">Erreur : ${
-          users.error || "impossible de charger les utilisateurs"
+          users.error || `impossible de charger les utilisateurs (HTTP ${response.status})`
         }</p>`;
         return;
       }
@@ -54,18 +68,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       container.innerHTML = "";
-      users.forEach(user => {
+      users.forEach((u) => {
         const card = document.createElement("div");
         card.className = "admin-user-card";
+
+        const created = u.created_at
+          ? new Date(u.created_at).toLocaleString("fr-FR")
+          : "-";
+
         card.innerHTML = `
-          <div class="admin-user-name">${user.firstname} ${user.lastname}</div>
-          <div class="admin-user-email">${user.email}</div>
-          <div class="admin-user-meta">
-            Inscription le ${new Date(user.created_at).toLocaleString("fr-FR")}
+          <div class="admin-user-name">${u.firstname || ""} ${u.lastname || ""}</div>
+          <div class="admin-user-email">${u.email || ""}</div>
+          <div class="admin-user-meta">Inscription le ${created}</div>
+
+          <div class="status-badge status-${u.status}">
+            ${labelStatus(u.status)}
           </div>
-          <div class="status-badge status-${user.status}">
-            ${labelStatus(user.status)}
-          </div>
+
           <div class="admin-user-actions">
             <button class="btn btn-xs btn-ghost" data-action="approve">Valider</button>
             <button class="btn btn-xs btn-ghost" data-action="reject">Refuser</button>
@@ -76,8 +95,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const btnReject = card.querySelector('[data-action="reject"]');
         const statusEl = card.querySelector(".status-badge");
 
-        btnApprove.addEventListener("click", () => updateStatus(user.id, "approved", statusEl));
-        btnReject.addEventListener("click", () => updateStatus(user.id, "rejected", statusEl));
+        btnApprove.addEventListener("click", () => updateStatus(u.id, "approved", statusEl));
+        btnReject.addEventListener("click", () => updateStatus(u.id, "rejected", statusEl));
 
         container.appendChild(card);
       });
@@ -99,27 +118,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/admin/users/${userId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({ status: newStatus })
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
 
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = {};
+      }
 
       if (!response.ok) {
-        alert("Erreur : " + (data.error || "mise à jour impossible"));
+        alert("Erreur : " + (data.error || `mise à jour impossible (HTTP ${response.status})`));
         return;
       }
 
-      statusElement.textContent = labelStatus(data.user.status);
-      statusElement.className = `status-badge status-${data.user.status}`;
+      // Mise à jour visuelle
+      const s = data.user?.status || newStatus;
+      statusElement.textContent = labelStatus(s);
+      statusElement.className = `status-badge status-${s}`;
     } catch (err) {
       console.error(err);
       alert("Erreur réseau.");

@@ -4,17 +4,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("loginForm");
   const errorEl = document.getElementById("loginError");
 
-  if (!form) return;
+  if (!form) {
+    console.error("❌ Formulaire introuvable. Vérifie que ton <form> a bien id='loginForm'");
+    return;
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (errorEl) {
-      errorEl.style.display = "none";
-      errorEl.textContent = "";
+
+    hideError();
+
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+
+    if (!emailInput || !passwordInput) {
+      showError("Champs email/mot de passe introuvables dans la page.");
+      return;
     }
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
 
     if (!email || !password) {
       showError("Merci de remplir tous les champs.");
@@ -28,27 +37,40 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ email, password })
       });
 
-      const data = await response.json();
+      // ✅ éviter crash si la réponse n'est pas du JSON
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = {};
+      }
 
       if (!response.ok) {
-        showError(data.error || "Connexion impossible.");
+        showError(data.error || `Connexion impossible (HTTP ${response.status}).`);
         return;
       }
 
-      // On stocke le token et les infos utilisateur pour la suite (dashboard, etc.)
+      // ✅ stockage
       localStorage.setItem("sama_token", data.token);
       localStorage.setItem("sama_user", JSON.stringify(data.user));
 
       alert("Connexion réussie ✅");
 
-      // Pour l'instant on renvoie vers l'accueil, plus tard ce sera /dashboard
-      window.location.href = "/";
+      // ✅ redirection (choisis celle qui marche chez toi)
+      window.location.href = "/"; 
+      // window.location.href = "/index.html";
 
     } catch (err) {
       console.error(err);
       showError("Erreur réseau. Réessaie plus tard.");
     }
   });
+
+  function hideError() {
+    if (!errorEl) return;
+    errorEl.style.display = "none";
+    errorEl.textContent = "";
+  }
 
   function showError(message) {
     if (!errorEl) {
